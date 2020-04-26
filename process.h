@@ -14,6 +14,9 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <zconf.h>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <time.h>
 
 typedef enum boolean { True = 1, False = 0 } boolean;
 
@@ -79,7 +82,7 @@ process *get_processes_info();
 
 DIR *get_processes_dir();
 
-char * print_header(process *p);
+char* print_header(process *p);
 
 int get_refresh_freq();
 

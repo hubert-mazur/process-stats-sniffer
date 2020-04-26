@@ -51,7 +51,6 @@ char **get_processes_dirs_list()
 			strcpy(name_buffer, "/proc/");
 			strcat(name_buffer, buff);
 			strcat(name_buffer, "/");
-//			printf("%s\n", name_buffer);
 			processes = (char **) realloc(processes, (processes_count + 1) * sizeof(char *));
 			*(processes + processes_count) = (char *) malloc(current_dir->d_reclen * sizeof(char) + 7);
 			memcpy(*(processes + processes_count), name_buffer, current_dir->d_reclen * sizeof(char) + 7);
@@ -89,9 +88,37 @@ process *get_processes_info()
 		strcpy(fn_io, *(processes_list + i));
 		strcat(fn_io, statistics_files[2]);
 
-		stat = fopen(fn_stat, "r");
-		statm = fopen(fn_statm, "r");
-		io = fopen(fn_io, "r");
+//		int stat_s = open(fn_stat, O_RDONLY);
+//		if (stat_s < 0)
+//		{
+//			perror("Cannot open file! leaving");
+//		}
+//		flock(stat_s, LOCK_EX);
+		// experimetnal !
+
+		int fd_stat = open(fn_stat, O_RDONLY);
+		int fd_statm = open(fn_statm, O_RDONLY);
+		int fd_io = open(fn_io, O_RDONLY);
+
+		if (fd_io < 0 || fd_stat < 0 || fd_statm < 0)
+		{
+			perror("fd < 0\n");
+			continue;
+		}
+
+		flock(fd_stat, LOCK_EX);
+		flock(fd_statm, LOCK_EX);
+		flock(fd_io, LOCK_EX);
+
+
+		stat = fdopen(fd_stat, "r");
+		statm = fdopen(fd_statm, "r");
+		io = fdopen(fd_io, "r");
+		 //
+
+//		stat = fopen(fn_stat, "r");
+//		statm = fopen(fn_statm, "r");
+//		io = fopen(fn_io, "r");
 
 		char buffer[10000] = {'\0'};
 		get_file_content(buffer, stat);
@@ -136,6 +163,10 @@ process *get_processes_info()
 		fclose(stat);
 		fclose(statm);
 		fclose(io);
+
+		flock(fd_stat, LOCK_UN);
+		flock(fd_statm, LOCK_UN);
+		flock(fd_io, LOCK_UN);
 	}
 	free_string_array(processes_list, processes_count);
 
@@ -360,7 +391,7 @@ prefix set_prefix(char c)
 	}
 }
 
-char * print_header(process *p)
+char* print_header(process *p)
 {
 	int working = 0;
 	int sleeping = 0;
@@ -391,12 +422,9 @@ char * print_header(process *p)
 				break;
 		}
 	}
-
-	char *buffer = malloc(1000 * sizeof(char));
+	char* buffer = malloc(10000 * sizeof(char));
 	sprintf(buffer, "All: %d, running: %d, sleeping: %d, zombie: %d, stopped: %d, idle: %d\n", processes_count, working,
 			sleeping, zombie, stopped, idle);
-//	printw("All: %d, running: %d, sleeping: %d, zombie: %d, stopped: %d, idle: %d\n", processes_count, working,
-//		   sleeping, zombie, stopped, idle);
 	return buffer;
 }
 

@@ -10,12 +10,15 @@ int main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-
 	initscr();
 	char *buff;
+	clock_t time;
+	time = clock();
 
 	while (True)
 	{
+		if ((clock() - time) < 1 * CLOCKS_PER_SEC)
+			continue;
 		struct process *p = get_processes_info();
 		buff = print_header(p);
 		printw("%s\n", buff);
@@ -32,6 +35,8 @@ int main(int argc, char **argv)
 //			break;
 //		}
 		printw("ON\n");
+		time = clock();
+		printf("1s\n");
 	}
 
 	endwin();
