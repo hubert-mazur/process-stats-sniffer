@@ -10,37 +10,33 @@ int main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-	initscr();
+//	initscr();
 	char *buff;
 	clock_t time;
 	time = clock();
-
+	unsigned counter = 0;
 	while (True)
 	{
+		if (counter == 600)
+			break;
 		if ((clock() - time) < 1 * CLOCKS_PER_SEC)
 			continue;
 		struct process *p = get_processes_info();
 		buff = print_header(p);
-		printw("%s\n", buff);
+		printf("%s\n", buff);
+		list_process_info(p);
 		refresh();
-		free(buff);
 		clear();
+		free(buff);
 		free_process_fields_mem(p);
 		free(p);
-//		if (feof(stdin))
-//			continue;
-//		else
-//		{
-//			if (getc(stdin) == 'q')
-//			break;
-//		}
-		printw("ON\n");
 		time = clock();
-		printf("1s\n");
+		printf("%d\n", counter);
+		counter++;
+//		break;
 	}
 
 	endwin();
-
 
 	return 0;
 }

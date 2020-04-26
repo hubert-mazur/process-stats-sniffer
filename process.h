@@ -86,5 +86,7 @@ char* print_header(process *p);
 
 int get_refresh_freq();
 
+void list_process_info(process *p);
+
 
 #endif //PROCESS_STATS_SNIFFER_PROCESS_H
