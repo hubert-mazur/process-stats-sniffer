@@ -40,7 +40,7 @@ char **get_processes_dirs_list()
 	DIR *dir = get_processes_dir();
 	char **processes = NULL;
 	struct dirent *current_dir;
-	char name_buffer[100];
+	char name_buffer[200];
 	char buff[100];
 	while ((current_dir = readdir(dir)))
 	{
@@ -48,9 +48,7 @@ char **get_processes_dirs_list()
 		buff[current_dir->d_reclen] = 0;
 		if (is_dir_process_dir(buff))
 		{
-			strcpy(name_buffer, "/proc/");
-			strcat(name_buffer, buff);
-			strcat(name_buffer, "/");
+			sprintf(name_buffer, "/proc/%s/", buff);
 			processes = (char **) realloc(processes, (processes_count + 1) * sizeof(char *));
 			*(processes + processes_count) = (char *) malloc(current_dir->d_reclen * sizeof(char) + 7);
 			memcpy(*(processes + processes_count), name_buffer, current_dir->d_reclen * sizeof(char) + 7);
@@ -66,35 +64,18 @@ process *get_processes_info()
 	static const char *statistics_files[] = {"stat", "statm", "io"};
 	char **processes_list = get_processes_dirs_list();
 	process *info = (process *) malloc(processes_count * sizeof(process));
-
 	FILE *stat;
 	FILE *statm;
 	FILE *io;
-	char *fn_stat = NULL;
-	char *fn_statm = NULL;
-	char *fn_io = NULL;
+	char fn_stat[100];
+	char fn_statm[100];
+	char fn_io[100];
 
 	for (int i = 0; i < processes_count; i++)
 	{
-		fn_stat = (char *) malloc(strlen(*(processes_list + i)) + strlen(statistics_files[0]) + 1);
-		strcpy(fn_stat, *(processes_list + i));
-		strcat(fn_stat, statistics_files[0]);
-
-		fn_statm = (char *) malloc(strlen(*(processes_list + i)) + strlen(statistics_files[1]) + 1);
-		strcpy(fn_statm, *(processes_list + i));
-		strcat(fn_statm, statistics_files[1]);
-
-		fn_io = (char *) malloc(strlen(*(processes_list + i)) + strlen(statistics_files[2]) + 1);
-		strcpy(fn_io, *(processes_list + i));
-		strcat(fn_io, statistics_files[2]);
-
-//		int stat_s = open(fn_stat, O_RDONLY);
-//		if (stat_s < 0)
-//		{
-//			perror("Cannot open file! leaving");
-//		}
-//		flock(stat_s, LOCK_EX);
-		// experimetnal !
+		sprintf(fn_stat, "%s%s", *(processes_list + i), statistics_files[0]);
+		sprintf(fn_statm, "%s%s", *(processes_list + i), statistics_files[1]);
+		sprintf(fn_io, "%s%s", *(processes_list + i), statistics_files[2]);
 
 		int fd_stat = open(fn_stat, O_RDONLY);
 		int fd_statm = open(fn_statm, O_RDONLY);
@@ -102,7 +83,7 @@ process *get_processes_info()
 
 		if (fd_io < 0 || fd_stat < 0 || fd_statm < 0)
 		{
-			perror("fd < 0\n");
+			info[i].command = NULL;
 			continue;
 		}
 
@@ -110,15 +91,10 @@ process *get_processes_info()
 		flock(fd_statm, LOCK_EX);
 		flock(fd_io, LOCK_EX);
 
-
 		stat = fdopen(fd_stat, "r");
 		statm = fdopen(fd_statm, "r");
 		io = fdopen(fd_io, "r");
-		 //
-
-//		stat = fopen(fn_stat, "r");
-//		statm = fopen(fn_statm, "r");
-//		io = fopen(fn_io, "r");
+		//
 
 		char buffer[10000] = {'\0'};
 		get_file_content(buffer, stat);
@@ -156,10 +132,6 @@ process *get_processes_info()
 
 		free_string_array(res, size);
 
-		free(fn_stat);
-		free(fn_statm);
-		free(fn_io);
-
 		fclose(stat);
 		fclose(statm);
 		fclose(io);
@@ -168,6 +140,7 @@ process *get_processes_info()
 		flock(fd_statm, LOCK_UN);
 		flock(fd_io, LOCK_UN);
 	}
+
 	free_string_array(processes_list, processes_count);
 
 	return info;
@@ -253,14 +226,14 @@ void free_process_fields_mem(struct process *s)
 {
 	for (int i = 0; i < processes_count; i++)
 	{
-		free(s[i].command);
+		if (s[i].command != NULL)
+			free(s[i].command);
 	}
 }
 
 void get_file_content(char *buffer, FILE *file)
 {
 	int counter = 0;
-
 	flockfile(file);
 
 	while (!feof(file))
@@ -391,7 +364,7 @@ prefix set_prefix(char c)
 	}
 }
 
-char* print_header(process *p)
+char *print_header(process *p)
 {
 	int working = 0;
 	int sleeping = 0;
@@ -401,6 +374,9 @@ char* print_header(process *p)
 
 	for (int i = 0; i < processes_count; i++)
 	{
+		if (p[i].command == NULL)
+			continue;
+
 		switch (p[i].status)
 		{
 			case Running:
@@ -422,7 +398,7 @@ char* print_header(process *p)
 				break;
 		}
 	}
-	char* buffer = malloc(10000 * sizeof(char));
+	char *buffer = malloc(10000 * sizeof(char));
 	sprintf(buffer, "All: %d, running: %d, sleeping: %d, zombie: %d, stopped: %d, idle: %d\n", processes_count, working,
 			sleeping, zombie, stopped, idle);
 	return buffer;
@@ -432,3 +408,19 @@ int get_refresh_freq()
 {
 
 }
+
+void list_process_info(process *p)
+{
+
+	for (int i = 0; i < processes_count; i++)
+	{
+		if (p[i].command == NULL)
+			continue;
+		printf("%-5d %-5d %-10lu %-10llu %-10lu %-10lu %-10llu %-10llu %-u %-s\n", p[i].pid, p[i].ppid, p[i].vsize, p[i].rss,
+			   p[i].utime,
+			   p[i].stime, p[i].size,
+			   p[i].shared, p[i].status, p[i].command);
+
+	}
+}
+
