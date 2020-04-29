@@ -10,7 +10,8 @@ int main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-//	initscr();
+	initscr();
+	window = newwin(LINES, COLS, 0,0);
 	char *buff;
 	clock_t time;
 	time = clock();
@@ -19,19 +20,19 @@ int main(int argc, char **argv)
 	{
 		if (counter == 600)
 			break;
-		if ((clock() - time) < 1 * CLOCKS_PER_SEC)
+		if ((clock() - time) < get_refresh_freq() * CLOCKS_PER_SEC)
 			continue;
 		struct process *p = get_processes_info();
 		buff = print_header(p);
-		printf("%s\n", buff);
+		wprintw(window,"%s\n", buff);
 		list_process_info(p);
-		refresh();
-		clear();
+		wrefresh(window);
+		wclear(window);
 		free(buff);
 		free_process_fields_mem(p);
 		free(p);
 		time = clock();
-		printf("%d\n", counter);
+		wprintw(window,"%d\n", counter);
 		counter++;
 //		break;
 	}

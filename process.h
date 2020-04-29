@@ -20,6 +20,8 @@
 #include <time.h>
 #include "colors.h"
 
+WINDOW * window;
+
 typedef enum boolean { True = 1, False = 0 } boolean;
 
 typedef enum prefix { k = 1000, M = 1000000, G = 1000000000, D = 1 } prefix;

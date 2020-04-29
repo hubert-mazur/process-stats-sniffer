@@ -258,7 +258,7 @@ void init_limits()
 	limits.b_written = ULLONG_MAX;
 	limits.ch_read_limit = ULLONG_MAX;
 	limits.ch_written_limit = ULLONG_MAX;
-	limits.metric_prefix = 0;
+	limits.metric_prefix = 1;
 	limits.refresh_freq = 1;
 	strcpy(limits.sort_by, "pid");
 	limits.rss_limit = ULLONG_MAX;
@@ -318,7 +318,7 @@ void read_parameters(int argc, char **argv)
 			key[1][strlen(key[1]) - 1] = '\0';
 			limits.utime_limit = strtoull(key[1], NULL, 0);
 		}
-		else if (strcmp(key[0], "h") == 0)
+		else if (strcmp(key[0], "-h") == 0)
 		{
 			limits.human_readable = True;
 		}
@@ -411,24 +411,39 @@ int get_refresh_freq()
 
 void list_process_info(process *p)
 {
-	printf("%s %s\b\b", WHITE_BACKGROUND, BLACK_BOLD);
-	printf("%-5s %-5s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s\b\n", "PID", "PPID", "vSize", "RSS",
-		   "uTime",
-		   "sTime", "size", "shared", "status", "command", RESET);
+	wprintw(window,"%s %s\b\b", WHITE_BACKGROUND, BLACK_BOLD);
+	wprintw(window, "%5s %5s %10s %10s %10s %10s %10s %10s %10s %10s %10s\b\n", "PID", "PPID", "vSize", "RSS",
+			"uTime",
+			"sTime", "size", "shared", "status", "command", RESET);
 	qsort_r(p, processes_count, sizeof(struct process), comparator, limits.sort_by);
-
 
 	for (int i = 0; i < processes_count; i++)
 	{
 		if (p[i].command == NULL)
 			continue;
 		if (check_exceeding_limit(p + i))
-			printf("%s %s\b", WHITE_BACKGROUND, RED);
-		printf("%-5d %-5d %-10lu %-10llu %-10lu %-10lu %-10llu %-10llu %-10u %-10s\n", p[i].pid, p[i].ppid, p[i].vsize,
-			   p[i].rss,
-			   p[i].utime,
-			   p[i].stime, p[i].size,
-			   p[i].shared, p[i].status, p[i].command);
+			wprintw(window,"%s %s\b", WHITE_BACKGROUND, RED);
+		if (limits.human_readable)
+		{
+			p[i].vsize /= M;
+			p[i].rss /= M;
+			p[i].size /= M;
+			p[i].shared /= M;
+			wprintw(window, "%5d %5d %10luM %10lluM %10lu %10lu %10lluM %10lluM %10u %10s\n", p[i].pid, p[i].ppid,
+					p[i].vsize,
+					p[i].rss,
+					p[i].utime,
+					p[i].stime, p[i].size,
+					p[i].shared, p[i].status, p[i].command);
+		}
+		else
+			wprintw(window, "%-5d %-5d %-10lu %-10llu %-10lu %-10lu %-10llu %-10llu %-10u %-10s\n", p[i].pid, p[i].ppid,
+					p[i].vsize,
+					p[i].rss,
+					p[i].utime,
+					p[i].stime, p[i].size,
+					p[i].shared, p[i].status, p[i].command);
+
 		printf("%s\b", RESET);
 	}
 }
@@ -437,7 +452,6 @@ int comparator(const void *v1, const void *v2, void *arg)
 {
 	process *pv_1 = (process *) (v1);
 	process *pv_2 = (process *) (v2);
-	char *argv = (char *) arg;
 
 	if (!strcmp(arg, "pid"))
 	{
@@ -467,7 +481,7 @@ int comparator(const void *v1, const void *v2, void *arg)
 		if (pv_1->rss >= pv_2->rss)
 			return -1;
 		else
-			return 0;
+			return 1;
 	}
 	else if (!strcmp(arg, "utime"))
 	{
@@ -481,7 +495,7 @@ int comparator(const void *v1, const void *v2, void *arg)
 		if (pv_1->stime >= pv_2->stime)
 			return -1;
 		else
-			return 0;
+			return 1;
 	}
 	else if (!strcmp(arg, "size"))
 	{
@@ -494,19 +508,19 @@ int comparator(const void *v1, const void *v2, void *arg)
 		if (pv_1->shared >= pv_2->shared)
 			return -1;
 		else
-			return 0;
+			return 1;
 	}
 }
 
 boolean check_exceeding_limit(process *p)
 {
 	if (
-			p->vsize >= limits.vsize_limit * limits.metric_prefix ||
-			p->rss >= limits.rss_limit * limits.metric_prefix ||
-			p->utime >= limits.utime_limit * limits.metric_prefix ||
-			p->stime >= limits.stime_limit * limits.metric_prefix ||
-			p->size >= limits.size_limit * limits.metric_prefix ||
-			p->size >= limits.shared_limit * limits.metric_prefix
+			p->vsize / limits.metric_prefix >= limits.vsize_limit ||
+			p->rss / limits.metric_prefix >= limits.rss_limit ||
+			p->utime / limits.metric_prefix >= limits.utime_limit ||
+			p->stime / limits.metric_prefix >= limits.stime_limit ||
+			p->size / limits.metric_prefix >= limits.size_limit ||
+			p->size / limits.metric_prefix >= limits.shared_limit
 			)
 		return True;
 
