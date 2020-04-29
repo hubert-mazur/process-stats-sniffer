@@ -4,6 +4,7 @@
 
 #ifndef PROCESS_STATS_SNIFFER_PROCESS_H
 #define PROCESS_STATS_SNIFFER_PROCESS_H
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <ncurses.h>
@@ -17,12 +18,25 @@
 #include <fcntl.h>
 #include <sys/file.h>
 #include <time.h>
+#include "colors.h"
 
 typedef enum boolean { True = 1, False = 0 } boolean;
 
 typedef enum prefix { k = 1000, M = 1000000, G = 1000000000, D = 1 } prefix;
 
-typedef enum process_state {Running, Sleeping, Waiting, Zombie, Stopped, Tracing_stop, Dead, Wakekill, Waking, Parked, Idle} process_state;
+typedef enum process_state {
+	Running,
+	Sleeping,
+	Waiting,
+	Zombie,
+	Stopped,
+	Tracing_stop,
+	Dead,
+	Wakekill,
+	Waking,
+	Parked,
+	Idle
+} process_state;
 
 typedef struct process {
 	pid_t pid;
@@ -82,11 +96,15 @@ process *get_processes_info();
 
 DIR *get_processes_dir();
 
-char* print_header(process *p);
+char *print_header(process *p);
 
 int get_refresh_freq();
 
 void list_process_info(process *p);
+
+int comparator(const void *v1, const void *v2, void *arg);
+
+boolean check_exceeding_limit(process *p);
 
 
 #endif //PROCESS_STATS_SNIFFER_PROCESS_H

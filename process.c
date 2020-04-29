@@ -322,11 +322,11 @@ void read_parameters(int argc, char **argv)
 		{
 			limits.human_readable = True;
 		}
-		else if (strcmp(key[0], "sortby") == 0)
+		else if (strcmp(key[0], "--sortby") == 0)
 		{
 			strcpy(limits.sort_by, key[1]);
 		}
-		else if (strcmp(key[0], "watch") == 0)
+		else if (strcmp(key[0], "--watch") == 0)
 		{
 			limits.refresh_freq = (int) strtol(key[1], NULL, 0);
 		}
@@ -406,21 +406,109 @@ char *print_header(process *p)
 
 int get_refresh_freq()
 {
-
+	return limits.refresh_freq;
 }
 
 void list_process_info(process *p)
 {
+	printf("%s %s\b\b", WHITE_BACKGROUND, BLACK_BOLD);
+	printf("%-5s %-5s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s\b\n", "PID", "PPID", "vSize", "RSS",
+		   "uTime",
+		   "sTime", "size", "shared", "status", "command", RESET);
+	qsort_r(p, processes_count, sizeof(struct process), comparator, limits.sort_by);
+
 
 	for (int i = 0; i < processes_count; i++)
 	{
 		if (p[i].command == NULL)
 			continue;
-		printf("%-5d %-5d %-10lu %-10llu %-10lu %-10lu %-10llu %-10llu %-u %-s\n", p[i].pid, p[i].ppid, p[i].vsize, p[i].rss,
+		if (check_exceeding_limit(p + i))
+			printf("%s %s\b", WHITE_BACKGROUND, RED);
+		printf("%-5d %-5d %-10lu %-10llu %-10lu %-10lu %-10llu %-10llu %-10u %-10s\n", p[i].pid, p[i].ppid, p[i].vsize,
+			   p[i].rss,
 			   p[i].utime,
 			   p[i].stime, p[i].size,
 			   p[i].shared, p[i].status, p[i].command);
-
+		printf("%s\b", RESET);
 	}
 }
 
+int comparator(const void *v1, const void *v2, void *arg)
+{
+	process *pv_1 = (process *) (v1);
+	process *pv_2 = (process *) (v2);
+	char *argv = (char *) arg;
+
+	if (!strcmp(arg, "pid"))
+	{
+		if (pv_1->pid <= pv_2->pid)
+			return -1;
+		else
+			return 1;
+	}
+
+	else if (!strcmp(arg, "ppid"))
+	{
+		if (pv_1->ppid <= pv_2->ppid)
+			return -1;
+		else
+			return 1;
+	}
+
+	else if (!strcmp(arg, "vsize"))
+	{
+		if (pv_1->vsize >= pv_2->vsize)
+			return -1;
+		else
+			return 1;
+	}
+	else if (!strcmp(arg, "rss"))
+	{
+		if (pv_1->rss >= pv_2->rss)
+			return -1;
+		else
+			return 0;
+	}
+	else if (!strcmp(arg, "utime"))
+	{
+		if (pv_1->utime >= pv_2->utime)
+			return -1;
+		else
+			return 1;
+	}
+	else if (!strcmp(arg, "stime"))
+	{
+		if (pv_1->stime >= pv_2->stime)
+			return -1;
+		else
+			return 0;
+	}
+	else if (!strcmp(arg, "size"))
+	{
+		if (pv_1->size >= pv_2->size)
+			return -1;
+		else return 1;
+	}
+	else if (!strcmp(arg, "shared"))
+	{
+		if (pv_1->shared >= pv_2->shared)
+			return -1;
+		else
+			return 0;
+	}
+}
+
+boolean check_exceeding_limit(process *p)
+{
+	if (
+			p->vsize >= limits.vsize_limit * limits.metric_prefix ||
+			p->rss >= limits.rss_limit * limits.metric_prefix ||
+			p->utime >= limits.utime_limit * limits.metric_prefix ||
+			p->stime >= limits.stime_limit * limits.metric_prefix ||
+			p->size >= limits.size_limit * limits.metric_prefix ||
+			p->size >= limits.shared_limit * limits.metric_prefix
+			)
+		return True;
+
+	return False;
+}
