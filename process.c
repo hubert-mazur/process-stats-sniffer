@@ -411,10 +411,11 @@ int get_refresh_freq()
 
 void list_process_info(process *p)
 {
-	wprintw(window,"%s %s\b\b", WHITE_BACKGROUND, BLACK_BOLD);
-	wprintw(window, "%5s %5s %10s %10s %10s %10s %10s %10s %10s %10s %10s\b\n", "PID", "PPID", "vSize", "RSS",
+	wattron(window, COLOR_PAIR(HEADER_COLOR));
+	wprintw(window, "%5s %5s %10s %10s %10s %10s %10s %10s %10s %10s %10s\n", "PID", "PPID", "vSize", "RSS",
 			"uTime",
-			"sTime", "size", "shared", "status", "command", RESET);
+			"sTime", "size", "shared", "status", "command");
+	wattroff(window, COLOR_PAIR(HEADER_COLOR));
 	qsort_r(p, processes_count, sizeof(struct process), comparator, limits.sort_by);
 
 	for (int i = 0; i < processes_count; i++)
@@ -422,7 +423,7 @@ void list_process_info(process *p)
 		if (p[i].command == NULL)
 			continue;
 		if (check_exceeding_limit(p + i))
-			wprintw(window,"%s %s\b", WHITE_BACKGROUND, RED);
+			wattron(window, COLOR_PAIR(EXCEED_LIM_COLOR));
 		if (limits.human_readable)
 		{
 			p[i].vsize /= M;
@@ -444,7 +445,9 @@ void list_process_info(process *p)
 					p[i].stime, p[i].size,
 					p[i].shared, p[i].status, p[i].command);
 
-		printf("%s\b", RESET);
+		wattroff(window, COLOR_PAIR(EXCEED_LIM_COLOR));
+		wattron(window, COLOR_PAIR(NORMAL_LIM_COLOR));
+
 	}
 }
 
@@ -525,4 +528,38 @@ boolean check_exceeding_limit(process *p)
 		return True;
 
 	return False;
+}
+
+void screen_scroll(int *pad_pos)
+{
+	int ch;
+	while ((ch = wgetch(window)) != 'q')
+	{
+		switch (ch)
+		{
+			case 'w':
+			{
+				if (*pad_pos >= 0)
+				{
+					(*pad_pos)--;
+				}
+				wclear(window);
+				prefresh(window, *pad_pos, 0, 0, 0, LINES-1, COLS);
+				break;
+			}
+			case 's':
+			{
+				if (*pad_pos <= LINES + 1)
+				{
+					(*pad_pos)++;
+				}
+				wclear(window);
+				prefresh(window, *pad_pos, 0, 0, 0, LINES - 1, COLS);
+				break;
+			}
+			default:
+				continue;
+		}
+	}
+	ON_FLAG = False;
 }

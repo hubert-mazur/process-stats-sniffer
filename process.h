@@ -18,9 +18,12 @@
 #include <fcntl.h>
 #include <sys/file.h>
 #include <time.h>
-#include "colors.h"
+#include <pthread.h>
 
-WINDOW * window;
+#define EXCEED_LIM_COLOR 1
+#define NORMAL_LIM_COLOR 2
+#define HEADER_COLOR 3
+#define MAX_NUMBER_OF_LISTED_PROCESSES 10000
 
 typedef enum boolean { True = 1, False = 0 } boolean;
 
@@ -107,6 +110,12 @@ void list_process_info(process *p);
 int comparator(const void *v1, const void *v2, void *arg);
 
 boolean check_exceeding_limit(process *p);
+
+void screen_scroll(int *pad_pos);
+
+
+boolean volatile ON_FLAG;
+WINDOW *window;
 
 
 #endif //PROCESS_STATS_SNIFFER_PROCESS_H
