@@ -19,7 +19,6 @@ int main(int argc, char **argv)
 
 	window = newpad(MAX_NUMBER_OF_LISTED_PROCESSES, COLS);
 
-
 	char *buff;
 	volatile int pad_pos = 0;
 	ON_FLAG = True;

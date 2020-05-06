@@ -412,7 +412,7 @@ int get_refresh_freq()
 void list_process_info(process *p)
 {
 	wattron(window, COLOR_PAIR(HEADER_COLOR));
-	wprintw(window, "%5s %5s %10s %10s %10s %10s %10s %10s %10s %10s\n", "PID", "PPID", "vSize", "RSS",
+	wprintw(window, "%3s %3s %8s %8s %10s %10s %10s %10s %10s   %10s\n", "PID", "PPID", "vSize", "RSS",
 			"uTime",
 			"sTime", "size", "shared", "status", "command");
 	wattroff(window, COLOR_PAIR(HEADER_COLOR));
@@ -430,20 +430,20 @@ void list_process_info(process *p)
 			p[i].rss /= M;
 			p[i].size /= M;
 			p[i].shared /= M;
-			wprintw(window, "%5d %5d %10luM %10lluM %10lu %10lu %10lluM %10lluM %10u %10s\n", p[i].pid, p[i].ppid,
+			wprintw(window, "%5d %5d %10luM %10lluM %10lu %10lu %10lluM %10lluM %10s %10s\n", p[i].pid, p[i].ppid,
 					p[i].vsize,
 					p[i].rss,
 					p[i].utime,
 					p[i].stime, p[i].size,
-					p[i].shared, p[i].status, p[i].command);
+					p[i].shared, get_state_name(p[i].status), p[i].command);
 		}
 		else
-			wprintw(window, "%-5d %-5d %-10lu %-10llu %-10lu %-10lu %-10llu %-10llu %-10u %-10s\n", p[i].pid, p[i].ppid,
+			wprintw(window, "%-5d %-5d %-10lu %-10llu %-10lu %-10lu %-10llu %-10llu %-10s %-10s\n", p[i].pid, p[i].ppid,
 					p[i].vsize,
 					p[i].rss,
 					p[i].utime,
 					p[i].stime, p[i].size,
-					p[i].shared, p[i].status, p[i].command);
+					p[i].shared, get_state_name(p[i].status), p[i].command);
 
 		wattroff(window, COLOR_PAIR(EXCEED_LIM_COLOR));
 		wattron(window, COLOR_PAIR(NORMAL_LIM_COLOR));
@@ -548,17 +548,17 @@ void screen_scroll(int *pad_pos)
 					(*pad_pos)--;
 				}
 				wclear(window);
-				prefresh(window, *pad_pos, 0, 0, 0, LINES - 1, COLS);
+				prefresh(window, *pad_pos, 0, 0, 0, MAX_NUMBER_OF_LISTED_PROCESSES - 1, COLS);
 				break;
 			}
 			case 's':
 			{
-				if (*pad_pos <= LINES + 1)
+				if (*pad_pos <= MAX_NUMBER_OF_LISTED_PROCESSES + 1)
 				{
 					(*pad_pos)++;
 				}
 				wclear(window);
-				prefresh(window, *pad_pos, 0, 0, 0, LINES - 1, COLS);
+				prefresh(window, *pad_pos, 0, 0, 0, MAX_NUMBER_OF_LISTED_PROCESSES - 1, COLS);
 				break;
 			}
 			default:
@@ -566,4 +566,48 @@ void screen_scroll(int *pad_pos)
 		}
 	}
 	ON_FLAG = False;
+}
+
+char *get_state_name(int state)
+{
+	switch (state)
+	{
+		case 0:
+			return "Running";
+
+		case 1:
+			return "Sleeping";
+
+		case 2:
+			return "Waiting";
+
+		case 3:
+			return "Zombie";
+
+		case 4:
+			return "Stopped";
+
+		case 5:
+			return "Tracing_stop";
+
+		case 6:
+			return "Dead";
+
+		case 7:
+			return "Wakekill";
+
+		case 8:
+			return "Waking";
+
+		case 9:
+			return "Parked";
+
+		case 10:
+			return "Idle";
+
+		default:
+			return "s";
+			perror("No such process state\n");
+			break;
+	}
 }
