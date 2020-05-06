@@ -7,6 +7,11 @@
 static int processes_count = 0;
 conditions limits;
 
+/**
+ * Function that opens a directory, where processes are stored - /proc
+ * In case of failure prints error and exits
+ * @return DIR directory
+ */
 DIR *get_processes_dir()
 {
 	char dir[] = "/proc/";
@@ -21,6 +26,12 @@ DIR *get_processes_dir()
 	return directory;
 }
 
+/**
+ * Function that checks whether given directory name  is directory
+ * Returns logical value
+ * @param string name of directory
+ * @return boolean
+ */
 boolean is_dir_process_dir(char *string)
 {
 	char *c = string;
@@ -33,7 +44,11 @@ boolean is_dir_process_dir(char *string)
 	return True;
 }
 
-
+/**
+ * Function which iterates through /proc directory to find all process directories
+ * Returns 2D array of chars - names of process directories
+ * @return char**
+ */
 char **get_processes_dirs_list()
 {
 	processes_count = 0;
@@ -59,6 +74,13 @@ char **get_processes_dirs_list()
 	return processes;
 }
 
+/**
+ * Function that reads processes files to fill statistics tables.
+ * Files read: stat, statm, io
+ * Uses locks to prevent io operations on these files for time of reading
+ * Returns struct process with full information about process
+ * @return process
+ */
 process *get_processes_info()
 {
 	static const char *statistics_files[] = {"stat", "statm", "io"};
@@ -94,7 +116,6 @@ process *get_processes_info()
 		stat = fdopen(fd_stat, "r");
 		statm = fdopen(fd_statm, "r");
 		io = fdopen(fd_io, "r");
-		//
 
 		char buffer[10000] = {'\0'};
 		get_file_content(buffer, stat);
@@ -146,6 +167,13 @@ process *get_processes_info()
 	return info;
 }
 
+/**
+ * Function for string splitting with given delimiter
+ * @param string string to split
+ * @param delimiter delimiter used for splitting
+ * @param size number of strings after split
+ * @return
+ */
 char **split_str(char *string, const char delimiter, int *size)
 {
 	char **string_arr = NULL;
@@ -156,7 +184,6 @@ char **split_str(char *string, const char delimiter, int *size)
 
 	while (True)
 	{
-//		printf("%c\n", *pointer);
 		if (*pointer == delimiter || *pointer == '\0')
 		{
 			buffer[strlen(buffer)] = '\0';
@@ -184,6 +211,11 @@ char **split_str(char *string, const char delimiter, int *size)
 	return string_arr;
 }
 
+/**
+ *
+ * @param c character indicating state of process
+ * @return returns one of process state
+ */
 process_state state_rewrite(char c)
 {
 	switch (c)
@@ -213,15 +245,14 @@ process_state state_rewrite(char c)
 		case 'I':
 			return Idle;
 		default:
-		{
-			printf("%c\n", c);
-			perror("Unsupported process state!\n");
-			return Idle; // DEBUG ONLY, TODO: IMPLEMENT PROPER STATE
-//			exit(-1);
-		}
+			return Idle;
 	}
 }
 
+/**
+ * Function that frees unused information about process
+ * @param s pointer to array of type struct process
+ */
 void free_process_fields_mem(struct process *s)
 {
 	for (int i = 0; i < processes_count; i++)
@@ -231,6 +262,12 @@ void free_process_fields_mem(struct process *s)
 	}
 }
 
+/**
+ * Function that reads data from file to buffer
+ * Uses flockfile for proper io operations
+ * @param buffer char array, storage for file content
+ * @param file pointer to opened file
+ */
 void get_file_content(char *buffer, FILE *file)
 {
 	int counter = 0;
@@ -245,6 +282,11 @@ void get_file_content(char *buffer, FILE *file)
 	funlockfile(file);
 }
 
+/**
+ * Function tht frees 2D char array
+ * @param arr pointer to 2D char array
+ * @param size size of array to free
+ */
 void free_string_array(char **arr, int size)
 {
 	for (int j = 0; j < size; j++)
@@ -252,6 +294,9 @@ void free_string_array(char **arr, int size)
 	free(arr);
 }
 
+/**
+ * Function that initializes limits
+ */
 void init_limits()
 {
 	limits.b_read = ULLONG_MAX;
@@ -270,6 +315,11 @@ void init_limits()
 	limits.human_readable = False;
 }
 
+/**
+ * Function that reads input parameters
+ * @param argc number of arguments
+ * @param argv 2D char array of arguments
+ */
 void read_parameters(int argc, char **argv)
 {
 	init_limits();
@@ -343,6 +393,11 @@ void read_parameters(int argc, char **argv)
 
 }
 
+/**
+ * Function that sets proper metric prefix
+ * @param c character with given prefix
+ * @return
+ */
 prefix set_prefix(char c)
 {
 	if (isdigit(c))
@@ -358,12 +413,17 @@ prefix set_prefix(char c)
 			return G;
 		default:
 		{
-			perror("Unsupported metric prefix in __FILE__ at __LINE__\n");
+			perror("Unsupported metric prefix!\n");
 			exit(-1);
 		}
 	}
 }
 
+/**
+ * Function that prints out to screen overall number of processes, and their state-classification
+ * @param p pointer to array of type struct process
+ * @return
+ */
 char *print_header(process *p)
 {
 	int working = 0;
@@ -404,11 +464,21 @@ char *print_header(process *p)
 	return buffer;
 }
 
+/**
+ * function that sets refresh frequency
+ * NOT IN USE
+ * @return int refresh frequency in seconds
+ */
 int get_refresh_freq()
 {
 	return limits.refresh_freq;
 }
 
+/**
+ * Function that prints to screen process information
+ * Checks whether process is exceeding any limit, if so lists it on red
+ * @param p pointer to array of type struct process
+ */
 void list_process_info(process *p)
 {
 	wattron(window, COLOR_PAIR(HEADER_COLOR));
@@ -451,6 +521,13 @@ void list_process_info(process *p)
 	}
 }
 
+/**
+ * Comparator used in qsort function for sorting processes
+ * @param v1 first process to compare
+ * @param v2 second process to compare
+ * @param arg additional argument, tells which parameter to sort by
+ * @return int order of processes
+ */
 int comparator(const void *v1, const void *v2, void *arg)
 {
 	process *pv_1 = (process *) (v1);
@@ -519,6 +596,11 @@ int comparator(const void *v1, const void *v2, void *arg)
 	}
 }
 
+/**
+ * Function that checks, whether process is exceeding any of limits
+ * @param p pointer to struct process
+ * @return boolean logical value, True if excceding limit
+ */
 boolean check_exceeding_limit(process *p)
 {
 	if (
@@ -534,6 +616,11 @@ boolean check_exceeding_limit(process *p)
 	return False;
 }
 
+/**
+ * Function that is responsible for screen scrolling
+ * Run under thread
+ * @param pad_pos pointer to current position in window
+ */
 void screen_scroll(int *pad_pos)
 {
 	int ch;
@@ -565,9 +652,16 @@ void screen_scroll(int *pad_pos)
 				continue;
 		}
 	}
+	pthread_mutex_lock(&mutex);
 	ON_FLAG = False;
+	pthread_mutex_unlock(&mutex);
 }
 
+/**
+ * Function that prints out state of process in full, human readable name
+ * @param state
+ * @return pointer to character, name of current process state
+ */
 char *get_state_name(int state)
 {
 	switch (state)
@@ -606,7 +700,6 @@ char *get_state_name(int state)
 			return "Idle";
 
 		default:
-			return "s";
 			perror("No such process state\n");
 			break;
 	}
