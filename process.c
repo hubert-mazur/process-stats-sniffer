@@ -14,7 +14,7 @@ DIR *get_processes_dir()
 	if (!directory)
 	{
 		char err_msg[100];
-		sprintf(err_msg, "Can't open directory %s, in __FILE__ at __LINE__", dir);
+		sprintf(err_msg, "Can't open directory /proc/");
 		perror(err_msg);
 		exit(-1);
 	}
@@ -412,7 +412,7 @@ int get_refresh_freq()
 void list_process_info(process *p)
 {
 	wattron(window, COLOR_PAIR(HEADER_COLOR));
-	wprintw(window, "%5s %5s %10s %10s %10s %10s %10s %10s %10s %10s %10s\n", "PID", "PPID", "vSize", "RSS",
+	wprintw(window, "%5s %5s %10s %10s %10s %10s %10s %10s %10s %10s\n", "PID", "PPID", "vSize", "RSS",
 			"uTime",
 			"sTime", "size", "shared", "status", "command");
 	wattroff(window, COLOR_PAIR(HEADER_COLOR));
@@ -455,6 +455,10 @@ int comparator(const void *v1, const void *v2, void *arg)
 {
 	process *pv_1 = (process *) (v1);
 	process *pv_2 = (process *) (v2);
+
+	if (pv_1->command == NULL || pv_2->command == NULL)
+		return 1;
+
 
 	if (!strcmp(arg, "pid"))
 	{
@@ -544,7 +548,7 @@ void screen_scroll(int *pad_pos)
 					(*pad_pos)--;
 				}
 				wclear(window);
-				prefresh(window, *pad_pos, 0, 0, 0, LINES-1, COLS);
+				prefresh(window, *pad_pos, 0, 0, 0, LINES - 1, COLS);
 				break;
 			}
 			case 's':

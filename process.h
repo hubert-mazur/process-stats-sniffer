@@ -117,5 +117,4 @@ void screen_scroll(int *pad_pos);
 boolean volatile ON_FLAG;
 WINDOW *window;
 
-
 #endif //PROCESS_STATS_SNIFFER_PROCESS_H

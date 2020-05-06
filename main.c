@@ -18,6 +18,8 @@ int main(int argc, char **argv)
 	init_pair(HEADER_COLOR, COLOR_GREEN, COLOR_BLACK);
 
 	window = newpad(MAX_NUMBER_OF_LISTED_PROCESSES, COLS);
+
+
 	char *buff;
 	volatile int pad_pos = 0;
 	ON_FLAG = True;
@@ -30,7 +32,6 @@ int main(int argc, char **argv)
 	}
 	while (ON_FLAG)
 	{
-
 		struct process *p = get_processes_info();
 		buff = print_header(p);
 		wattron(window, COLOR_PAIR(HEADER_COLOR));
@@ -42,9 +43,9 @@ int main(int argc, char **argv)
 		free(buff);
 		free_process_fields_mem(p);
 		free(p);
+
 	}
-
+	pthread_join(screen_mg_thread, NULL);
 	endwin();
-
 	return 0;
 }
