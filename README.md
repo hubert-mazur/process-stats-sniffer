@@ -75,7 +75,9 @@ When giving limit it is possible to use prefixes:
 ### Examples of usage
 
 ```./process-stats-sniffer --rsslim=10M --sortby=rss```
+
 ```./process-stats-sniffer --h --sortby=utime```
+
 ```./process-stats-sniffer --size=100 --sortby=ppid```
 
 ### Window
