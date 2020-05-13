@@ -482,7 +482,7 @@ int get_refresh_freq()
 void list_process_info(process *p)
 {
 	wattron(window, COLOR_PAIR(HEADER_COLOR));
-	wprintw(window, "%3s %3s %8s %8s %10s %10s %10s %10s %10s   %10s\n", "PID", "PPID", "vSize", "RSS",
+	wprintw(window, "%5s %5s %10s %10s %10s %10s %10s %10s %10s %10s\n", "PID", "PPID", "vSize", "RSS",
 			"uTime",
 			"sTime", "size", "shared", "status", "command");
 	wattroff(window, COLOR_PAIR(HEADER_COLOR));
@@ -508,7 +508,7 @@ void list_process_info(process *p)
 					p[i].shared, get_state_name(p[i].status), p[i].command);
 		}
 		else
-			wprintw(window, "%-5d %-5d %-10lu %-10llu %-10lu %-10lu %-10llu %-10llu %-10s %-10s\n", p[i].pid, p[i].ppid,
+			wprintw(window, "%5d %5d %10lu %10llu %10lu %10lu %10llu %10llu %10s %10s\n", p[i].pid, p[i].ppid,
 					p[i].vsize,
 					p[i].rss,
 					p[i].utime,
